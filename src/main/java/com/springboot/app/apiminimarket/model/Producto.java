@@ -27,7 +27,7 @@ public class Producto {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "id_categoria", nullable = false)
-    private  Categoria categoria;
+    private Categoria categoria;
 
     @Column(name = "activo", nullable = false )
     private boolean activo = true;
