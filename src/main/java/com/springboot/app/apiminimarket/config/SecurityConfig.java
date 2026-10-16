@@ -4,6 +4,7 @@ import com.springboot.app.apiminimarket.security.JwtAuthFilter;
 import com.springboot.app.apiminimarket.security.UserDetailsServiceImpl;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
@@ -33,7 +34,8 @@ public class SecurityConfig {
         http
                 .csrf(AbstractHttpConfigurer::disable) // Desactivamos CSRF ya que usamos API REST sin estado
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/api/auth/**").permitAll() // Rutas públicas para login y registro
+                        .requestMatchers("/api/auth/**").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/usuarios").permitAll()// Rutas públicas para login y registro
                         .anyRequest().authenticated() // Todo lo demás requiere token JWT
                 )
                 .sessionManagement(session -> session
