@@ -17,7 +17,6 @@ public class Categoria {
     @Column(name = "nombre", nullable = false, unique = true, length = 100)
     private String nombre;
 
-    @Lob
     @Column(name = "descripcion", columnDefinition = "TEXT")
     private String descripcion;
 

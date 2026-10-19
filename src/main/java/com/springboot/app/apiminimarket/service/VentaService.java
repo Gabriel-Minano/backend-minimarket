@@ -18,6 +18,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 
 @Service
 public class VentaService {
@@ -58,7 +59,7 @@ public class VentaService {
         //Inicializar venta
         Venta venta = new Venta();
         venta.setUsuario(usuario);
-        venta.setActivo(true);
+        venta.setFechaVenta(LocalDateTime.now());
 
         BigDecimal totalVenta = BigDecimal.ZERO;
 
