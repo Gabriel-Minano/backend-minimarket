@@ -75,4 +75,11 @@ public class CategoriaService {
         categoria.setActivo(false);
         categoriaRepository.save(categoria);
     }
+
+    @Transactional
+    public CategoriaResponse reactivarCategoria(Long id){
+        Categoria categoria = categoriaRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Categoría no encontrada con el id: " + id));
+        categoria.setActivo(true);
+        return categoriaMapper.toResponse(categoriaRepository.save(categoria));
+    }
 }

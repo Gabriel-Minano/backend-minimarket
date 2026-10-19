@@ -115,4 +115,11 @@ public class UsuarioService {
         usuario.setActivo(false);
         usuarioRepository.save(usuario);
     }
+
+    public UsuarioResponse reactivarUsuario(Long id) {
+        Usuario usuario = usuarioRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado con el id: " + id));
+        usuario.setActivo(true);
+        return usuarioMapper.toResponse(usuarioRepository.save(usuario));
+    }
 }

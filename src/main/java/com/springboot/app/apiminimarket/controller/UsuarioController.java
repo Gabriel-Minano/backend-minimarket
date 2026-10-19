@@ -65,4 +65,11 @@ public class UsuarioController {
         usuarioService.desactivarUsuario(id);
         return ResponseEntity.ok(new ApiResponse<>(true, "Usuario desactivado exitosamente", null));
     }
+
+    @PatchMapping("/{id}/reactivar")
+    public ResponseEntity<ApiResponse<UsuarioResponse>> reactivarUsuario(@PathVariable Long id) {
+        UsuarioResponse usuario = usuarioService.reactivarUsuario(id);
+        return ResponseEntity.ok(new ApiResponse<>(true, "Usuario reactivado exitosamente", usuario));
+
+    }
 }

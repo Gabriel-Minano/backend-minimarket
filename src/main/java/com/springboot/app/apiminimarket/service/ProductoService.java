@@ -115,4 +115,11 @@ public class ProductoService {
         producto.setActivo(false);
         productoRepository.save(producto);
     }
+
+    @Transactional
+    public ProductoResponse reactivarProducto(Long id) {
+        Producto producto = productoRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Producto no encontrado con el id: " + id));
+        producto.setActivo(true);
+        return productoMapper.toResponse(productoRepository.save(producto));
+    }
 }

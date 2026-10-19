@@ -70,4 +70,11 @@ public class CategoriaController {
         return ResponseEntity.ok(new ApiResponse<>(true, "Categoría desactivada exitosamente", null));
     }
 
+    @PatchMapping("/{id}/reactivar")
+    public ResponseEntity<ApiResponse<CategoriaResponse>> reactivarCategoria(
+            @PathVariable  Long id){
+        CategoriaResponse categoria = categoriaService.reactivarCategoria(id);
+        return ResponseEntity.ok(new ApiResponse<>(true, "Categoría reactivada exitosamente", categoria));
+    }
+
 }

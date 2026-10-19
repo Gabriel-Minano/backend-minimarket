@@ -79,4 +79,11 @@ public class ProductoController {
         return ResponseEntity.ok(new ApiResponse<>(true, "Producto desactivado exitosamente", null));
     }
 
+    @PatchMapping("/{id}/reactivar")
+    public ResponseEntity<ApiResponse<ProductoResponse>> reactivarProducto(
+            @PathVariable  Long id) {
+        ProductoResponse producto = productoService.reactivarProducto(id);
+        return ResponseEntity.ok(new ApiResponse<>(true, "Producto reactivado exitosamente", producto));
+    }
+
 }
