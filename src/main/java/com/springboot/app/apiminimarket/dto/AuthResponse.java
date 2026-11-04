@@ -1,6 +1,10 @@
 package com.springboot.app.apiminimarket.dto;
 
+import java.util.Set;
+
 public record AuthResponse(
-        String token
+        String token,
+        String email,
+        Set<String> roles
 ) {
 }

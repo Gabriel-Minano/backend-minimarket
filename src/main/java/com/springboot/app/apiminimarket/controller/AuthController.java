@@ -8,9 +8,13 @@ import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.Set;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/auth")
@@ -27,7 +31,7 @@ public class AuthController {
 
     @PostMapping("/login")
     public ResponseEntity<ApiResponse<AuthResponse>> login(
-            @Valid @RequestBody LoginRequest request){
+            @Valid @RequestBody LoginRequest request) {
         //Autenticar credenciales
         authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(request.email(), request.password())
@@ -37,7 +41,11 @@ public class AuthController {
         UserDetails userDetails = userDetailsService.loadUserByUsername(request.email());
         String token = jwtService.generateToken(userDetails);
 
-        return ResponseEntity.ok(new ApiResponse<>(true, "Login exitoso", new AuthResponse(token)));
-    }
+        Set<String> roles = userDetails.getAuthorities().stream()
+                .map(GrantedAuthority::getAuthority)
+                .collect(Collectors.toSet());
 
+        AuthResponse authResponse = new AuthResponse(token, userDetails.getUsername(), roles);
+        return ResponseEntity.ok(new ApiResponse<>(true, "Login exitoso", authResponse));
+    }
 }
