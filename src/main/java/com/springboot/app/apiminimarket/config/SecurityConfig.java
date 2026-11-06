@@ -2,12 +2,16 @@ package com.springboot.app.apiminimarket.config;
 
 import com.springboot.app.apiminimarket.security.JwtAuthFilter;
 import com.springboot.app.apiminimarket.security.UserDetailsServiceImpl;
+import jakarta.servlet.DispatcherType;
+import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
+import org.springframework.http.MediaType;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
+import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
@@ -17,6 +21,10 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.web.cors.CorsConfiguration;
+import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+
+import java.util.List;
 
 @Configuration
 @EnableWebSecurity
@@ -32,14 +40,78 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
+                .cors(Customizer.withDefaults())
                 .csrf(AbstractHttpConfigurer::disable) // Desactivamos CSRF ya que usamos API REST sin estado
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/api/auth/**").permitAll()
-                        .requestMatchers(HttpMethod.POST, "/api/usuarios").permitAll()// Rutas públicas para login y registro
-                        .anyRequest().authenticated() // Todo lo demás requiere token JWT
+                        .dispatcherTypeMatchers(DispatcherType.ERROR).permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/auth/login").permitAll()
+                        .requestMatchers("/api/usuarios", "/api/usuarios/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.GET,
+                                "/api/categorias",
+                                "/api/categorias/{id}",
+                                "/api/productos",
+                                "/api/productos/{id}",
+                                "/api/ventas",
+                                "/api/ventas/{id}",
+                                "/api/roles"
+                        ).hasAnyRole("ADMIN", "CAJERO")
+                        .requestMatchers(HttpMethod.POST, "/api/ventas").hasAnyRole("ADMIN", "CAJERO")
+                        .requestMatchers(HttpMethod.DELETE, "/api/ventas/{id}").hasRole("ADMIN")
+
+                        .requestMatchers(HttpMethod.POST, "/api/categorias", "/api/productos").hasRole("ADMIN")
+
+                        .requestMatchers(HttpMethod.PUT, "/api/categorias/{id}", "/api/productos/{id}").hasRole("ADMIN")
+
+                        .requestMatchers(HttpMethod.DELETE, "/api/categorias/{id}", "/api/productos/{id}").hasRole("ADMIN")
+
+                        .requestMatchers(HttpMethod.PATCH,
+                                "/api/categorias/{id}/reactivar",
+                                "/api/productos/{id}/reactivar"
+                        ).hasRole("ADMIN")
+
+                        .anyRequest().denyAll()
+                ).exceptionHandling(ex -> ex
+
+                        // Usuario no autenticado: 401
+                        .authenticationEntryPoint((request, response, exception) -> {
+                            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+
+                            response.setContentType(MediaType.APPLICATION_JSON_VALUE);
+
+                            response.setCharacterEncoding("UTF-8");
+
+                            response.getWriter().write(
+                                    """
+                                    {
+                                        "success": false,
+                                        "message": "No autenticado",
+                                        "data": null
+                                    }
+                                    """
+                            );
+                        })
+
+                        // Usuario autenticado sin permisos: 403
+                        .accessDeniedHandler((request, response, exception) -> {
+                            response.setStatus(HttpServletResponse.SC_FORBIDDEN);
+
+                            response.setContentType(MediaType.APPLICATION_JSON_VALUE);
+
+                            response.setCharacterEncoding("UTF-8");
+
+                            response.getWriter().write(
+                                    """
+                                    {
+                                        "success": false,
+                                        "message": "No tienes permisos para realizar esta operación",
+                                        "data": null
+                                    }
+                                    """
+                            );
+                        })
                 )
                 .sessionManagement(session -> session
-                        .sessionCreationPolicy(SessionCreationPolicy.STATELESS) // Sin sesiones (JWT es stateless)
+                        .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
                 )
                 .authenticationProvider(authenticationProvider())
                 .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
@@ -62,5 +134,41 @@ public class SecurityConfig {
     @Bean
     public AuthenticationManager authenticationManager(AuthenticationConfiguration config) throws Exception {
         return config.getAuthenticationManager();
+    }
+
+    //CORS
+    @Bean
+    public UrlBasedCorsConfigurationSource corsConfigurationSource() {
+
+        CorsConfiguration config = new CorsConfiguration();
+
+        config.setAllowedOrigins(List.of(
+                "http://localhost:4200"
+        ));
+
+        config.setAllowedMethods(List.of(
+                "GET",
+                "POST",
+                "PUT",
+                "PATCH",
+                "DELETE",
+                "OPTIONS"
+        ));
+
+        config.setAllowedHeaders(List.of(
+                "Authorization",
+                "Content-Type"
+        ));
+
+        config.setAllowCredentials(false);
+
+        config.setMaxAge(3600L);
+
+        UrlBasedCorsConfigurationSource source =
+                new UrlBasedCorsConfigurationSource();
+
+        source.registerCorsConfiguration("/api/**", config);
+
+        return source;
     }
 }

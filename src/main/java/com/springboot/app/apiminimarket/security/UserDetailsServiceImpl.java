@@ -25,6 +25,7 @@ public class UserDetailsServiceImpl implements UserDetailsService {
 
         //Mapear los roles al authorities de Spring Security
         var authorities = usuario.getRoles().stream()
+                .filter(rol -> rol.isActivo())
                 .map(rol -> new SimpleGrantedAuthority(rol.getNombre()))
                 .toList();
 
