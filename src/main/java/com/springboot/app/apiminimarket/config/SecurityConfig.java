@@ -2,6 +2,7 @@ package com.springboot.app.apiminimarket.config;
 
 import com.springboot.app.apiminimarket.security.JwtAuthFilter;
 import com.springboot.app.apiminimarket.security.UserDetailsServiceImpl;
+import com.springboot.app.apiminimarket.wrapper.ApiResponse;
 import jakarta.servlet.DispatcherType;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.context.annotation.Bean;
@@ -23,7 +24,10 @@ import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+import tools.jackson.databind.json.JsonMapper;
 
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 
 @Configuration
@@ -31,10 +35,12 @@ import java.util.List;
 public class SecurityConfig {
     private final JwtAuthFilter jwtAuthFilter;
     private final UserDetailsServiceImpl userDetailsServiceImpl;
+    private final JsonMapper jsonMapper;
 
-    public SecurityConfig(JwtAuthFilter jwtAuthFilter, UserDetailsServiceImpl userDetailsServiceImpl) {
+    public SecurityConfig(JwtAuthFilter jwtAuthFilter, UserDetailsServiceImpl userDetailsServiceImpl, JsonMapper jsonMapper) {
         this.jwtAuthFilter = jwtAuthFilter;
         this.userDetailsServiceImpl = userDetailsServiceImpl;
+        this.jsonMapper = jsonMapper;
     }
 
     @Bean
@@ -72,43 +78,23 @@ public class SecurityConfig {
                         .anyRequest().denyAll()
                 ).exceptionHandling(ex -> ex
 
-                        // Usuario no autenticado: 401
-                        .authenticationEntryPoint((request, response, exception) -> {
-                            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                        //Usuario sin autenticación válida 401
+                        .authenticationEntryPoint((request, response, exception) ->
+                                writeErrorResponse(
+                                        response,
+                                        HttpServletResponse.SC_UNAUTHORIZED,
+                                        "No autenticado"
+                                )
+                        )
 
-                            response.setContentType(MediaType.APPLICATION_JSON_VALUE);
-
-                            response.setCharacterEncoding("UTF-8");
-
-                            response.getWriter().write(
-                                    """
-                                    {
-                                        "success": false,
-                                        "message": "No autenticado",
-                                        "data": null
-                                    }
-                                    """
-                            );
-                        })
-
-                        // Usuario autenticado sin permisos: 403
-                        .accessDeniedHandler((request, response, exception) -> {
-                            response.setStatus(HttpServletResponse.SC_FORBIDDEN);
-
-                            response.setContentType(MediaType.APPLICATION_JSON_VALUE);
-
-                            response.setCharacterEncoding("UTF-8");
-
-                            response.getWriter().write(
-                                    """
-                                    {
-                                        "success": false,
-                                        "message": "No tienes permisos para realizar esta operación",
-                                        "data": null
-                                    }
-                                    """
-                            );
-                        })
+                        //Usuario autenticado sin permisos 403
+                        .accessDeniedHandler((request, response, exception) ->
+                                writeErrorResponse(
+                                        response,
+                                        HttpServletResponse.SC_FORBIDDEN,
+                                        "No tienes permisos para realizar esta operación"
+                                )
+                        )
                 )
                 .sessionManagement(session -> session
                         .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
@@ -170,5 +156,20 @@ public class SecurityConfig {
         source.registerCorsConfiguration("/api/**", config);
 
         return source;
+    }
+
+    private void writeErrorResponse(HttpServletResponse response, int status, String message) throws IOException {
+        response.setStatus(status);
+        response.setContentType(MediaType.APPLICATION_JSON_VALUE);
+        response.setCharacterEncoding(StandardCharsets.UTF_8.name());
+
+        ApiResponse<Void> body = new ApiResponse<>(
+                false,
+                message,
+                null
+        );
+        response.getWriter().write(
+                jsonMapper.writeValueAsString(body)
+        );
     }
 }
