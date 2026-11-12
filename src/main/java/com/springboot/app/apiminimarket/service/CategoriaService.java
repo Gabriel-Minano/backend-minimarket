@@ -2,11 +2,13 @@ package com.springboot.app.apiminimarket.service;
 
 import com.springboot.app.apiminimarket.dto.CategoriaRequest;
 import com.springboot.app.apiminimarket.dto.CategoriaResponse;
+import com.springboot.app.apiminimarket.exception.BusinessException;
 import com.springboot.app.apiminimarket.exception.DuplicateResourceException;
 import com.springboot.app.apiminimarket.exception.ResourceNotFoundException;
 import com.springboot.app.apiminimarket.mapper.CategoriaMapper;
 import com.springboot.app.apiminimarket.model.Categoria;
 import com.springboot.app.apiminimarket.repository.CategoriaRepository;
+import com.springboot.app.apiminimarket.repository.ProductoRepository;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -16,10 +18,12 @@ import org.springframework.transaction.annotation.Transactional;
 public class CategoriaService {
     private final CategoriaRepository categoriaRepository;
     private final CategoriaMapper categoriaMapper;
+    private final ProductoRepository productoRepository;
 
-    public CategoriaService(CategoriaRepository categoriaRepository, CategoriaMapper categoriaMapper) {
+    public CategoriaService(CategoriaRepository categoriaRepository, CategoriaMapper categoriaMapper, ProductoRepository productoRepository) {
         this.categoriaRepository = categoriaRepository;
         this.categoriaMapper = categoriaMapper;
+        this.productoRepository = productoRepository;
     }
 
     @Transactional(readOnly = true)
@@ -79,6 +83,15 @@ public class CategoriaService {
     public void desactivarCategoria(Long id){
         Categoria categoria = categoriaRepository.findById(id).
                 orElseThrow(() -> new ResourceNotFoundException("Categoría no encontrada con el id: " + id));
+
+        // Verificar si tiene productos activos asociados
+        boolean tieneProductosActivos =
+                productoRepository.existsByCategoria_IdAndActivoTrue(id);
+
+        if (tieneProductosActivos) {
+            throw new BusinessException("No se puede desactivar la categoría '" + categoria.getNombre()
+                    + "' porque tiene productos activos asociados.");
+        }
         categoria.setActivo(false);
         categoriaRepository.save(categoria);
     }

@@ -2,6 +2,7 @@ package com.springboot.app.apiminimarket.service;
 
 import com.springboot.app.apiminimarket.dto.ProductoRequest;
 import com.springboot.app.apiminimarket.dto.ProductoResponse;
+import com.springboot.app.apiminimarket.exception.BusinessException;
 import com.springboot.app.apiminimarket.exception.DuplicateResourceException;
 import com.springboot.app.apiminimarket.exception.ResourceNotFoundException;
 import com.springboot.app.apiminimarket.mapper.ProductoMapper;
@@ -66,9 +67,9 @@ public class ProductoService {
             throw new DuplicateResourceException("Ya existe un producto registrado con el nombre: " + request.nombre());
         }
 
-        //Validar que la categoría asociada exista en la base de datos
-        Categoria categoria = categoriaRepository.findById(request.idCategoria())
-                .orElseThrow(() -> new ResourceNotFoundException("Categoría no encontrada con el id: " + request.idCategoria()));
+        //Validar que la categoría asociada exista y esté activa
+        Categoria categoria = obtenerCategoriaActiva(request.idCategoria());
+
 
         Producto producto = new Producto();
         producto.setNombre(request.nombre());
@@ -95,8 +96,8 @@ public class ProductoService {
         });
 
         //Verificar que la nueva categoría exista
-        Categoria categoria = categoriaRepository.findById(request.idCategoria())
-                .orElseThrow(() -> new ResourceNotFoundException("Categoría no encontrada con el id: " + request.idCategoria()));
+        Categoria categoria = obtenerCategoriaActiva(request.idCategoria());
+
 
         producto.setNombre(request.nombre());
         producto.setPrecio(request.precio());
@@ -119,7 +120,24 @@ public class ProductoService {
     @Transactional
     public ProductoResponse reactivarProducto(Long id) {
         Producto producto = productoRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Producto no encontrado con el id: " + id));
+
+        // Verificar el estado de la categoría asociada
+        if (!producto.getCategoria().isActivo()) {
+            throw new BusinessException("No se puede reactivar el producto porque su categoría '" + producto.getCategoria().getNombre()
+                    + "' se encuentra inactiva.");
+        }
         producto.setActivo(true);
         return productoMapper.toResponse(productoRepository.save(producto));
+    }
+
+    private Categoria obtenerCategoriaActiva(Long categoriaId) {
+        Categoria categoria = categoriaRepository.findById(categoriaId)
+                .orElseThrow(() -> new ResourceNotFoundException("Categoría no encontrada con el id: " + categoriaId));
+
+        if (!categoria.isActivo()) {
+            throw new BusinessException("No se puede asignar la categoría '" + categoria.getNombre() + "' porque se encuentra inactiva.");
+        }
+
+        return categoria;
     }
 }

@@ -24,6 +24,8 @@ public interface ProductoRepository extends JpaRepository<Producto, Long> {
     //Busqueda por nombre
     Optional<Producto> findByNombre(String nombre);
 
+    boolean existsByCategoria_IdAndActivoTrue(Long categoriaId);
+
     //Para traer el producto junto a su categoría, porque al estar con lazy no se podría
     //de forma normal debería usarse otra consulta adicional
     @Query("SELECT p FROM Producto p JOIN FETCH p.categoria WHERE p.id = :id")
