@@ -74,7 +74,7 @@ public class SecurityConfig {
                                 "/api/categorias/{id}/reactivar",
                                 "/api/productos/{id}/reactivar"
                         ).hasRole("ADMIN")
-
+                        .requestMatchers(HttpMethod.GET, "/").permitAll()
                         .anyRequest().denyAll()
                 ).exceptionHandling(ex -> ex
 

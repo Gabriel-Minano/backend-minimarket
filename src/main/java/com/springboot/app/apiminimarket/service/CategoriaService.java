@@ -23,9 +23,16 @@ public class CategoriaService {
     }
 
     @Transactional(readOnly = true)
-    public Page<CategoriaResponse> listarCategorias(boolean activo, Pageable pageable){
-        return categoriaRepository.findByActivo(activo, pageable)
-                .map(categoriaMapper::toResponse);
+    public Page<CategoriaResponse> listarCategorias(boolean activo, String nombre, Pageable pageable){
+        Page<Categoria> categorias;
+
+        if (nombre != null && !nombre.isBlank()) {
+            categorias = categoriaRepository.findByActivoAndNombreContainingIgnoreCase(activo, nombre.trim(), pageable);
+        } else {
+            categorias = categoriaRepository.findByActivo(activo, pageable);
+        }
+
+        return categorias.map(categoriaMapper::toResponse);
     }
 
     @Transactional(readOnly = true)

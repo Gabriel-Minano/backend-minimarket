@@ -26,8 +26,9 @@ public class CategoriaController {
     @GetMapping
     public ResponseEntity<ApiResponse<Page<CategoriaResponse>>> paginarCategorias(
             @RequestParam(defaultValue = "true") boolean activo,
+            @RequestParam(required = false) String nombre,
             @PageableDefault(size = 15, sort = "id") Pageable pageable){
-        Page<CategoriaResponse> categorias = categoriaService.listarCategorias(activo, pageable);
+        Page<CategoriaResponse> categorias = categoriaService.listarCategorias(activo, nombre, pageable);
         ApiResponse<Page<CategoriaResponse>> response = new ApiResponse<>(
                 true, "Éxito al obtener categorías", categorias
         );
