@@ -3,6 +3,7 @@ package com.springboot.app.apiminimarket.service;
 import com.springboot.app.apiminimarket.dto.DetalleVentaRequest;
 import com.springboot.app.apiminimarket.dto.VentaRequest;
 import com.springboot.app.apiminimarket.dto.VentaResponse;
+import com.springboot.app.apiminimarket.exception.BusinessException;
 import com.springboot.app.apiminimarket.exception.ResourceNotFoundException;
 import com.springboot.app.apiminimarket.mapper.VentaMapper;
 import com.springboot.app.apiminimarket.model.DetalleVenta;
@@ -51,10 +52,10 @@ public class VentaService {
 
     //Registro de venta
     @Transactional
-    public VentaResponse registrarVenta(VentaRequest request) {
-        //Validar que el usuario exista
-        Usuario usuario = usuarioRepository.findById(request.idUsuario())
-                .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado con el id: " + request.idUsuario()));
+    public VentaResponse registrarVenta(VentaRequest request, String emailUsuario) {
+        //El vendedor se obtiene del usuario autenticado, no del formulario
+        Usuario usuario = usuarioRepository.findByEmail(emailUsuario)
+                .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado con el correo: " + emailUsuario));
 
         //Inicializar venta
         Venta venta = new Venta();
@@ -68,9 +69,14 @@ public class VentaService {
             Producto producto = productoRepository.findById(detalleReq.idProducto())
                     .orElseThrow(() -> new ResourceNotFoundException("Producto no encontrado con el id: " + detalleReq.idProducto()));
 
+            //No permitir vender productos desactivados
+            if (!producto.isActivo()) {
+                throw new BusinessException("No se puede vender el producto inactivo: " + producto.getNombre());
+            }
+
             //Validación de stock
             if (producto.getStock() < detalleReq.cantidad()) {
-                throw new IllegalArgumentException("Stock insuficiente para el producto: " + producto.getNombre() +
+                throw new BusinessException("Stock insuficiente para el producto: " + producto.getNombre() +
                         " (Stock actual: " + producto.getStock() + ", Solicitado: " + detalleReq.cantidad() + ")");
             }
 
@@ -113,7 +119,7 @@ public class VentaService {
 
         //Verificar que la venta se encuentre anulada
         if (!venta.isActivo()) {
-            throw new IllegalStateException("La venta ya se encuentra anulada previamente.");
+            throw new BusinessException("La venta ya se encuentra anulada previamente.");
         }
 
         //Revertir el stock
@@ -127,4 +133,5 @@ public class VentaService {
         venta.setActivo(false);
         ventaRepository.save(venta);
     }
+
 }

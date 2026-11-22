@@ -10,6 +10,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
@@ -43,8 +44,8 @@ public class VentaController {
     }
 
     @PostMapping
-    public ResponseEntity<ApiResponse<VentaResponse>> registrarVenta(@Valid @RequestBody VentaRequest request) {
-        VentaResponse ventaRegistrada = ventaService.registrarVenta(request);
+    public ResponseEntity<ApiResponse<VentaResponse>> registrarVenta(@Valid @RequestBody VentaRequest request, Authentication authentication) {
+        VentaResponse ventaRegistrada = ventaService.registrarVenta(request, authentication.getName());
 
         URI location = ServletUriComponentsBuilder.fromCurrentRequest()
                 .path("/{id}")
