@@ -30,4 +30,7 @@ public interface ProductoRepository extends JpaRepository<Producto, Long> {
     //de forma normal debería usarse otra consulta adicional
     @Query("SELECT p FROM Producto p JOIN FETCH p.categoria WHERE p.id = :id")
     Optional<Producto> findByIdWithCategoria(@Param("id") Long id);
+
+    //Buscar productos activos con stock bajo
+    Page<Producto> findByActivoTrueAndStockLessThanEqual(Integer limite, Pageable pageable);
 }

@@ -11,7 +11,9 @@ import com.springboot.app.apiminimarket.model.Producto;
 import com.springboot.app.apiminimarket.repository.CategoriaRepository;
 import com.springboot.app.apiminimarket.repository.ProductoRepository;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -49,6 +51,17 @@ public class ProductoService {
     @Transactional(readOnly = true)
     public Page<ProductoResponse> buscarPorNombre(String nombre, boolean activo, Pageable pageable) {
         return productoRepository.findByNombreContainingIgnoreCaseAndActivo(nombre, activo, pageable)
+                .map(productoMapper::toResponse);
+    }
+
+    //Listar productos con stock bajo
+    @Transactional(readOnly = true)
+    public Page<ProductoResponse> listarStockBajo(int limite) {
+        if (limite < 0) {
+            throw new BusinessException("El límite de stock no puede ser negativo");
+        }
+        Pageable pageable = PageRequest.of(0, 10, Sort.by("stock").ascending());
+        return productoRepository.findByActivoTrueAndStockLessThanEqual(limite, pageable)
                 .map(productoMapper::toResponse);
     }
 

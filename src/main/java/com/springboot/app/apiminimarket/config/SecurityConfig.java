@@ -56,11 +56,13 @@ public class SecurityConfig {
                                 "/api/categorias",
                                 "/api/categorias/{id}",
                                 "/api/productos",
+                                "/api/productos/stock-bajo",
                                 "/api/productos/{id}",
                                 "/api/ventas",
                                 "/api/ventas/{id}",
                                 "/api/roles"
                         ).hasAnyRole("ADMIN", "CAJERO")
+                        .requestMatchers(HttpMethod.GET, "/api/reportes/ventas", "/api/reportes/ventas/exportar").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.POST, "/api/ventas").hasAnyRole("ADMIN", "CAJERO")
                         .requestMatchers(HttpMethod.DELETE, "/api/ventas/{id}").hasRole("ADMIN")
 

@@ -47,6 +47,15 @@ public class ProductoController {
         return ResponseEntity.ok(new ApiResponse<>(true, "Éxito al obtener productos", productos));
     }
 
+    @GetMapping("/stock-bajo")
+    public ResponseEntity<ApiResponse<Page<ProductoResponse>>> listarStockBajo(
+            @RequestParam(defaultValue = "10") int limite) {
+        Page<ProductoResponse> productos = productoService.listarStockBajo(limite);
+        return ResponseEntity.ok(new ApiResponse<>(
+                true, "Productos con stock bajo obtenidos exitosamente", productos
+        ));
+    }
+
     @GetMapping("/{id}")
     public ResponseEntity<ApiResponse<ProductoResponse>> obtenerProductoPorId(@PathVariable Long id) {
         ProductoResponse producto = productoService.obtenerPorId(id);
